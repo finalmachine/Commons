@@ -200,7 +200,9 @@ public class SimpleHttpClient implements Closeable {
 			response = client.execute(request, context);
 			LastStatus = response.getStatusLine().getStatusCode();
 			if (LastStatus == 302) {
-				return get(response.getFirstHeader("Location").getValue(), onlySucessfulEntity);
+				String url = response.getFirstHeader("Location").getValue();
+				response.close();
+				return get(url, onlySucessfulEntity);
 			} else {
 				if (onlySucessfulEntity) {
 					if (LastStatus / 100 != 2) {
@@ -233,7 +235,7 @@ public class SimpleHttpClient implements Closeable {
 			LastStatus = SSLHandshakeError;
 		} catch (IOException e) {
 			throw new RuntimeException(e);
-		}finally {
+		} finally {
 			if (response != null) {
 				try {
 					response.close();
