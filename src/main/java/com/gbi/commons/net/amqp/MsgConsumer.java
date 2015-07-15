@@ -15,19 +15,17 @@ public final class MsgConsumer extends MsgBase implements Runnable, Consumer {
 
 	private MsgWorker<? extends Serializable> _worker = null;
 
-	public <T extends Serializable> MsgConsumer(String queueName, MsgWorker<T> worker) throws IOException, TimeoutException,
-			CloneNotSupportedException {
+	public <T extends Serializable> MsgConsumer(String queueName, MsgWorker<T> worker) throws IOException, TimeoutException {
 		super(queueName);
 		_channel.basicQos(1);
-		_worker = worker.cloneWorker();
+		_worker = worker;
 	}
 
 	public <T extends Serializable> MsgConsumer(String queueName, MsgWorker<T> worker, String host, int port, String username,
-			String password, String virtualHost) throws IOException, TimeoutException,
-			CloneNotSupportedException {
+			String password, String virtualHost) throws IOException, TimeoutException {
 		super(queueName, host, port, username, password, virtualHost);
 		_channel.basicQos(1);
-		_worker = worker.cloneWorker();
+		_worker = worker;
 	}
 
 	@Override
@@ -57,11 +55,19 @@ public final class MsgConsumer extends MsgBase implements Runnable, Consumer {
 	@Override
 	public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties,
 			byte[] body) throws IOException {
-		if (_worker.work(SerializationUtils.deserialize(body))) {
-			_channel.basicAck(envelope.getDeliveryTag(), false);
-		} else {
-			System.err.println("job undo");
+		boolean result;
+		try {
+			result = _worker.work(SerializationUtils.deserialize(body));
+		} catch (Exception e) {
+			e.printStackTrace();
+			_channel.basicRecover(true);
+			return;
 		}
+		if (result) {
+			_channel.basicAck(envelope.getDeliveryTag(), false);
+			return;
+		}
+		_channel.basicRecover(true);
 	}
 
 	@Override
