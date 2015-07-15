@@ -39,7 +39,7 @@ public final class MsgConsumer extends MsgBase implements Runnable, Consumer {
 
 	@Override
 	public void handleConsumeOk(String consumerTag) {
-		System.out.println("handleConsumeOk");
+		System.out.println("Consumer:" + consumerTag + ":on>");
 	}
 
 	@Override
@@ -73,6 +73,12 @@ public final class MsgConsumer extends MsgBase implements Runnable, Consumer {
 	@Override
 	public void handleShutdownSignal(String consumerTag, ShutdownSignalException sig) {
 		System.out.println("handleShutdownSignal");
+		try {
+			_channel.close();
+			_connection.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
