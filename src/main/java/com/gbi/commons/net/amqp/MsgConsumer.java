@@ -37,10 +37,25 @@ public final class MsgConsumer extends MsgBase implements Runnable, Consumer {
 
 	@Override
 	public void run() {
+		SimpleHttpClient client = new SimpleHttpClient();
+		Map<String, String> extraHeaders = new HashMap<String, String>();
+		extraHeaders.put("Authorization", "Basic Z3Vlc3Q6Z3Vlc3Q=");
 		try {
+			String url = "http://localhost:15672/api/queues/" + URLEncoder.encode("/", "UTF-8") + "/"
+					+ URLEncoder.encode(_queueName, "UTF-8");
 			_channel.basicConsume(_queueName, false, this);
-		} catch (IOException e) {
+			while (true) {
+				JSONObject json = new JSONObject(new String(client.get(url, extraHeaders).getContent()));
+				if (json.getInt("messages") == 0) {
+					close();
+					break;
+				}
+				Thread.sleep(30000);
+			}
+		} catch (IOException | InterruptedException e) {
 			throw new RuntimeException(e);
+		} finally {
+			client.close();
 		}
 	}
 
@@ -72,17 +87,6 @@ public final class MsgConsumer extends MsgBase implements Runnable, Consumer {
 		}
 		if (result) {
 			_channel.basicAck(envelope.getDeliveryTag(), false);
-			SimpleHttpClient client = new SimpleHttpClient();
-			Map<String, String> extraHeaders = new HashMap<String, String>();
-			extraHeaders.put("Authorization", "Basic Z3Vlc3Q6Z3Vlc3Q=");
-			JSONObject json = new JSONObject(new String(client.get(
-					"http://localhost:15672/api/queues/" + URLEncoder.encode("/", "UTF-8") + "/"
-							+ URLEncoder.encode(_queueName, "UTF-8"), extraHeaders).getContent()));
-			client.close();
-			System.out.println(json.getInt("messages_ready"));
-			if (json.getInt("messages_ready") == 0) {
-				close();
-			}
 			return;
 		}
 		_channel.basicRecover(true);
@@ -90,13 +94,7 @@ public final class MsgConsumer extends MsgBase implements Runnable, Consumer {
 
 	@Override
 	public void handleShutdownSignal(String consumerTag, ShutdownSignalException sig) {
-		System.out.println("handleShutdownSignal");
-		try {
-			_channel.close();
-			_connection.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		System.out.println("Consumer:" + consumerTag + ":off>");
 	}
 
 	@Override
