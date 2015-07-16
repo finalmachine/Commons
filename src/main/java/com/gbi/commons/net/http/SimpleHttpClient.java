@@ -99,17 +99,21 @@ public class SimpleHttpClient implements Closeable {
 	 * Host*			as you need
 	 * User-Agent		Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.130 Safari/537.36
 	 */
-	private void setHeaders(HttpRequestBase requestBase) {
+	private void setHeaders(HttpRequestBase requestBase, Map<String, String> extraHeaders) {
 		requestBase.setHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,application/json;q=0.9,image/webp,*/*;q=0.8");
 		requestBase.setHeader("Accept-Language", "zh-CN,zh;q=0.8");
 		requestBase.setHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.130 Safari/537.36");
+		if (extraHeaders != null) {
+			for (String headName : extraHeaders.keySet()) {
+				requestBase.setHeader(headName, extraHeaders.get(headName));
+			}
+		}
 	}
 	
-	private void prepare(HttpMethod method, String uri, Map<String, String> data) {
+	private void prepare(HttpMethod method, String uri, Map<String, String> extraHeaders, Map<String, String> data) {
 		switch (method) {
 		case GET:
 			HttpGet requestGet = new HttpGet(uri);
-			setHeaders(requestGet);
 			request = requestGet;
 			break;
 		case POST:
@@ -129,6 +133,7 @@ public class SimpleHttpClient implements Closeable {
 			break;
 		}
 		LastStatus = 0;
+		setHeaders(request, extraHeaders);
 		// 设置http请求的配置参数
 		config = RequestConfig.custom()//
 				.setMaxRedirects(defaultMaxRedirects)//
@@ -141,11 +146,19 @@ public class SimpleHttpClient implements Closeable {
 	}
 
 	public SimpleHttpResponse get(final String uri) {
-		return get(uri, true);
+		return get(uri, null, true);
+	}
+	
+	public SimpleHttpResponse get(final String uri, Map<String, String> extraHeaders) {
+		return get(uri, extraHeaders, true);
 	}
 
 	public SimpleHttpResponse get(final String uri, boolean onlySucessfulEntity) {
-		prepare(HttpMethod.GET, uri, null);
+		return get(uri, null, true);
+	}
+
+	public SimpleHttpResponse get(final String uri, Map<String, String> extraHeaders, boolean onlySucessfulEntity) {
+		prepare(HttpMethod.GET, uri, extraHeaders, null);
 		try {
 			response = client.execute(request, context);
 			LastStatus = response.getStatusLine().getStatusCode();
@@ -195,14 +208,14 @@ public class SimpleHttpClient implements Closeable {
 	}
 
 	public SimpleHttpResponse post(final String uri, Map<String, String> data, boolean onlySucessfulEntity) {
-		prepare(HttpMethod.POST, uri, data);
+		prepare(HttpMethod.POST, uri, null, data);
 		try {
 			response = client.execute(request, context);
 			LastStatus = response.getStatusLine().getStatusCode();
 			if (LastStatus == 302) {
 				String url = response.getFirstHeader("Location").getValue();
 				response.close();
-				return get(url, onlySucessfulEntity);
+				return get(url, null, onlySucessfulEntity);
 			} else {
 				if (onlySucessfulEntity) {
 					if (LastStatus / 100 != 2) {

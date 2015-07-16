@@ -2,10 +2,15 @@ package com.gbi.commons.net.amqp;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.net.URLEncoder;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.lang3.SerializationUtils;
+import org.json.JSONObject;
 
+import com.gbi.commons.net.http.SimpleHttpClient;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.Envelope;
@@ -15,14 +20,16 @@ public final class MsgConsumer extends MsgBase implements Runnable, Consumer {
 
 	private MsgWorker<? extends Serializable> _worker = null;
 
-	public <T extends Serializable> MsgConsumer(String queueName, MsgWorker<T> worker) throws IOException, TimeoutException {
+	public <T extends Serializable> MsgConsumer(String queueName, MsgWorker<T> worker) throws IOException,
+			TimeoutException {
 		super(queueName);
 		_channel.basicQos(1);
 		_worker = worker;
 	}
 
-	public <T extends Serializable> MsgConsumer(String queueName, MsgWorker<T> worker, String host, int port, String username,
-			String password, String virtualHost) throws IOException, TimeoutException {
+	public <T extends Serializable> MsgConsumer(String queueName, MsgWorker<T> worker, String host,
+			int port, String username, String password, String virtualHost) throws IOException,
+			TimeoutException {
 		super(queueName, host, port, username, password, virtualHost);
 		_channel.basicQos(1);
 		_worker = worker;
@@ -65,6 +72,17 @@ public final class MsgConsumer extends MsgBase implements Runnable, Consumer {
 		}
 		if (result) {
 			_channel.basicAck(envelope.getDeliveryTag(), false);
+			SimpleHttpClient client = new SimpleHttpClient();
+			Map<String, String> extraHeaders = new HashMap<String, String>();
+			extraHeaders.put("Authorization", "Basic Z3Vlc3Q6Z3Vlc3Q=");
+			JSONObject json = new JSONObject(new String(client.get(
+					"http://localhost:15672/api/queues/" + URLEncoder.encode("/", "UTF-8") + "/"
+							+ URLEncoder.encode(_queueName, "UTF-8"), extraHeaders).getContent()));
+			client.close();
+			System.out.println(json.getInt("messages_ready"));
+			if (json.getInt("messages_ready") == 0) {
+				close();
+			}
 			return;
 		}
 		_channel.basicRecover(true);
