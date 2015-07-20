@@ -62,9 +62,11 @@ public class Excel2003Reader implements HSSFListener {
 	private boolean outputNextStringRecord;
 	// 当前行
 	private int curRow = 1;
+	
 	// 存储行记录的容器
-	private List<String> rowlist = new ArrayList<String>();;
-	@SuppressWarnings("unused")
+	private List<String> headers;
+	private List<Object> cells = new ArrayList<>();
+
 	private String sheetName;
 
 	private ExcelRowReader rowReader;
@@ -99,6 +101,7 @@ public class Excel2003Reader implements HSSFListener {
 	public void processRecord(Record record) {
 		int thisRow = -1;
 		int thisColumn = -1;
+		
 		String thisStr = null;
 		String value = null;
 		switch (record.getSid()) {
@@ -175,7 +178,7 @@ public class Excel2003Reader implements HSSFListener {
 			thisColumn = lrec.getColumn();
 			value = lrec.getValue().trim();
 			value = value.equals("") ? " " : value;
-			this.rowlist.add(thisColumn, value);
+			rowlist.add(thisColumn, value);
 			break;
 		case LabelSSTRecord.sid: // 单元格为字符串类型
 			LabelSSTRecord lsrec = (LabelSSTRecord) record;
@@ -214,24 +217,12 @@ public class Excel2003Reader implements HSSFListener {
 			thisColumn = mc.getColumn();
 			rowlist.add(thisColumn, " ");
 		}
-
-		// 更新行和列的值
-		if (thisRow > -1)
-			lastRowNumber = thisRow;
-		if (thisColumn > -1)
-			lastColumnNumber = thisColumn;
-
 		// 行结束时的操作
 		if (record instanceof LastCellOfRowDummyRecord) {
-			if (minColumns > 0) {
-				// 列值重新置空
-				if (lastColumnNumber == -1) {
-					lastColumnNumber = 0;
-				}
-			}
+
 			lastColumnNumber = -1;
 			// 每行结束时， 调用getRows() 方法
-		//	rowReader.getRows(curRow, rowlist);  TODO
+			rowReader.getRows(curRow, rowlist);  TODO
 			// 清空容器
 			rowlist.clear();
 			++curRow;

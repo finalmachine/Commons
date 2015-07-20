@@ -144,9 +144,9 @@ public class ExcelTest {
 				if(obj == null) {
 					System.out.printf("%5d:" + json.getString("specification_raw") + "\n", rowNumber);
 				}
-//				else {
-//					System.out.println(json);
-//				}
+				else {
+					System.out.println(json);
+				}
 			}
 		}
 	}
