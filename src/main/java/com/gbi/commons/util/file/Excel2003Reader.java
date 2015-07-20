@@ -61,7 +61,7 @@ public class Excel2003Reader implements HSSFListener {
 	private int nextColumn;
 	private boolean outputNextStringRecord;
 	// 当前行
-	private int curRow = 0;
+	private int curRow = 1;
 	// 存储行记录的容器
 	private List<String> rowlist = new ArrayList<String>();;
 	@SuppressWarnings("unused")
@@ -234,6 +234,7 @@ public class Excel2003Reader implements HSSFListener {
 		//	rowReader.getRows(curRow, rowlist);  TODO
 			// 清空容器
 			rowlist.clear();
+			++curRow;
 		}
 	}
 }

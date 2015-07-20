@@ -68,7 +68,7 @@ public class Excel2007Reader extends DefaultHandler {
 	 * @param sheetId
 	 * @throws Exception
 	 */
-	public void processOneSheet(final String filename,final int sheetId) throws Exception {
+	public void processOneSheet(final String filename, final int sheetId) throws Exception {
 		OPCPackage pkg = OPCPackage.open(filename, PackageAccess.READ);
 		sharedStringsTable = new ReadOnlySharedStringsTable(pkg);
 		XSSFReader reader = new XSSFReader(pkg);
@@ -85,7 +85,7 @@ public class Excel2007Reader extends DefaultHandler {
 	}
 
 	
-	public void processOneSheet(final String filename,final String sheetName) throws Exception {
+	public void processOneSheet(final String filename, final String sheetName) throws Exception {
 		OPCPackage pkg = OPCPackage.open(filename, PackageAccess.READ);
 		sharedStringsTable = new ReadOnlySharedStringsTable(pkg);
 		XSSFReader reader = new XSSFReader(pkg);
