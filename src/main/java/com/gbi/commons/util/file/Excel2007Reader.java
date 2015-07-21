@@ -230,8 +230,8 @@ public class Excel2007Reader extends DefaultHandler {
 		} else if ("row".equals(name)) {
 			if (curRow == 1) {
 				headers = new ArrayList<>();
-				for (Object o : cells) {
-					headers.add(o.toString());
+				for (Object head : cells) {
+					headers.add(head.toString());
 				}
 			} else {
 				JSONObject json = new JSONObject();
