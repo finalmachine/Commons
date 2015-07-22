@@ -220,8 +220,6 @@ public class Excel2007Reader extends DefaultHandler {
 				thisCell = "(TODO: Unexpected type: " + dataType + ")";
 				break;
 			}
-			// Output after we've seen the string contents
-			// Emit commas for any fields that were missing on this row
 			if (thisCell == null || (thisCell instanceof String && "".equals(thisCell))) {
 				cells.add(null);
 			} else {
