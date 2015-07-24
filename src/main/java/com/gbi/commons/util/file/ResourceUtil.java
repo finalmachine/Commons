@@ -8,6 +8,7 @@ public class ResourceUtil {
 	}
 
 	public static String getTestFileAbstractName(Class<?> clazz, String filename) {
+		System.out.println(System.getProperty("user.dir") + "/src/test/resources/" + clazz.getName().replace('.', '/') + "_test/" + filename);
 		return System.getProperty("user.dir") + "/src/test/resources/" + clazz.getName().replace('.', '/') + "_test/" + filename;
 	}
 }
