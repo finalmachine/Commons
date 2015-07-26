@@ -19,7 +19,7 @@ public class ExcelTest {
 	}
 	
 	private static void test1() throws Exception {
-		Excel.readExcel(new TypeTester(), ResourceUtil.getTestFileAbstractName(Excel.class, "test1.xlsx"), "Sheet0");
+		Excel.readExcel(new TypeTester(), ResourceUtil.getTestFileAbstractName(ExcelTest.class, "test1.xlsx"), "Sheet0");
 	}
 
 	public static void main(String[] args) throws Exception {
