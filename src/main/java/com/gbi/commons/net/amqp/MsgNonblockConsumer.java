@@ -8,18 +8,18 @@ import org.apache.commons.lang3.SerializationUtils;
 
 import com.rabbitmq.client.GetResponse;
 
-public class MsgConsumer2 extends MsgBase implements Runnable {
+public class MsgNonblockConsumer extends MsgBase implements Runnable {
 
 	private MsgWorker<? extends Serializable> _worker = null;
 
-	public <T extends Serializable> MsgConsumer2(String queueName, MsgWorker<T> worker) throws IOException,
+	public <T extends Serializable> MsgNonblockConsumer(String queueName, MsgWorker<T> worker) throws IOException,
 			TimeoutException {
 		super(queueName);
 		_channel.basicQos(1);
 		_worker = worker;
 	}
 
-	public <T extends Serializable> MsgConsumer2(String queueName, MsgWorker<T> worker, String host,
+	public <T extends Serializable> MsgNonblockConsumer(String queueName, MsgWorker<T> worker, String host,
 			int port, String username, String password, String virtualHost) throws IOException,
 			TimeoutException {
 		super(queueName, host, port, username, password, virtualHost);
