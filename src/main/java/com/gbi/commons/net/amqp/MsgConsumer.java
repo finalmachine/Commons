@@ -40,6 +40,7 @@ public final class MsgConsumer extends MsgBase implements Runnable, Consumer {
 		SimpleHttpClient client = new SimpleHttpClient();
 		Map<String, String> extraHeaders = new HashMap<String, String>();
 		extraHeaders.put("Authorization", "Basic Z3Vlc3Q6Z3Vlc3Q=");
+		
 		try {
 			String url = "http://localhost:15672/api/queues/" + URLEncoder.encode("/", "UTF-8") + "/"
 					+ URLEncoder.encode(_queueName, "UTF-8");

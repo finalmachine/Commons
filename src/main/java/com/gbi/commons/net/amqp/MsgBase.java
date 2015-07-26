@@ -2,6 +2,7 @@ package com.gbi.commons.net.amqp;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeoutException;
 
 import com.rabbitmq.client.Channel;
@@ -16,6 +17,13 @@ public class MsgBase implements Closeable {
 	
 	public MsgBase(String queueName) throws IOException, TimeoutException {
 		_connection = new ConnectionFactory().newConnection();
+		_channel = _connection.createChannel();
+		_queueName = queueName;
+		_channel.queueDeclare(queueName, true, false, false, null);
+	}
+	
+	public MsgBase(String queueName, ExecutorService pool) throws IOException, TimeoutException {
+		_connection = new ConnectionFactory().newConnection(pool);
 		_channel = _connection.createChannel();
 		_queueName = queueName;
 		_channel.queueDeclare(queueName, true, false, false, null);

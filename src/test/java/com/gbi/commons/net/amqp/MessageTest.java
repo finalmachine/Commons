@@ -5,29 +5,44 @@ import com.gbi.commons.net.amqp.MsgProducer;
 import com.gbi.commons.net.amqp.MsgWorker;
 
 public class MessageTest {
-	public static void main(String[] args) throws Exception {
-		MsgProducer<String> producer = new MsgProducer<>("MessageTest");
-		producer.send("01");
-		producer.send("12");
-		producer.send("23");
-		producer.send("34");
-		producer.send("45");
-		producer.send("56");
-		producer.send("67");
-		producer.send("78");
-		producer.send("89");
-		producer.send("90");
-		producer.close();
-		new Thread(new MsgConsumer("MessageTest", new MyWorker())).start();
-	}
-}
 
-class MyWorker implements MsgWorker<String> {
-
-	@Override
-	public boolean work(String message) {
-		System.out.println(message);
-		return true;
+	private static class MyWorker implements MsgWorker<String> {
+		@Override
+		public boolean work(String message) throws Exception {
+			System.out.println(Thread.currentThread().getName() + ">" + message);
+			Thread.sleep(500);
+			return true;
+		}
 	}
 	
+	private static class MyWorkerFactory implements MsgWorkerFactory<String> {
+		@Override
+		public MsgWorker<String> newWorker() {
+			return new MyWorker();
+		}
+	}
+	
+	public static void test1() throws Exception {
+		MsgProducer<String> producer = new MsgProducer<>("MessageTest");
+		for (int i = 0; i < 100; ++i) {
+			producer.send("" + i);
+		}
+		producer.close();
+		new Thread(new MsgConsumer("MessageTest", new MyWorker())).start();
+		new Thread(new MsgConsumer("MessageTest", new MyWorker())).start();
+		new Thread(new MsgConsumer("MessageTest", new MyWorker())).start();
+	}
+
+	public static void test2() throws Exception {
+		MsgProducer<String> producer = new MsgProducer<>("MessageTest");
+		for (int i = 0; i < 100; ++i) {
+			producer.send("" + i);
+		}
+		producer.close();
+		new MsgConsumers("MessageTest", 3, new MyWorkerFactory()).run();;
+	}
+
+	public static void main(String[] args) throws Exception {
+		test2();
+	}
 }
