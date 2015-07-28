@@ -16,14 +16,14 @@ import org.jsoup.nodes.Element;
 import org.jsoup.parser.Parser;
 
 @Immutable
-public class SimpleHttpResponse {
+public class BasicHttpResponse {
 	private String url = null;
 	private Header[] headers = null;
 	private byte[] content = null;
 	private String contentType = null;
 	private String contentCharset = null;
 
-	public SimpleHttpResponse(HttpClientContext context) throws IOException {
+	public BasicHttpResponse(HttpClientContext context) throws IOException {
 		HttpHost host = (HttpHost) context.getAttribute(HttpClientContext.HTTP_TARGET_HOST);
 		HttpRequest request = (HttpRequest) context.getAttribute(HttpClientContext.HTTP_REQUEST);
 		url = host.toURI() + request.getRequestLine().getUri();

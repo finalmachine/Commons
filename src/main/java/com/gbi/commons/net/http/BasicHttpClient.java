@@ -38,7 +38,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 
-public class SimpleHttpClient implements Closeable {
+public class BasicHttpClient implements Closeable {
 
 	// default config
 	private static final int defaultConnectTimeout = 240000;
@@ -68,7 +68,7 @@ public class SimpleHttpClient implements Closeable {
 	/**
 	 * 建立一个简单的
 	 */
-	public SimpleHttpClient() {
+	public BasicHttpClient() {
 		// 将HTTPS的网站证书设置成不检查的状态
 		SSLContext sslcontext = null;
 		try {
@@ -145,19 +145,19 @@ public class SimpleHttpClient implements Closeable {
 		request.setConfig(config);
 	}
 
-	public SimpleHttpResponse get(final String uri) {
+	public BasicHttpResponse get(final String uri) {
 		return get(uri, null, true);
 	}
 	
-	public SimpleHttpResponse get(final String uri, Map<String, String> extraHeaders) {
+	public BasicHttpResponse get(final String uri, Map<String, String> extraHeaders) {
 		return get(uri, extraHeaders, true);
 	}
 
-	public SimpleHttpResponse get(final String uri, boolean onlySucessfulEntity) {
+	public BasicHttpResponse get(final String uri, boolean onlySucessfulEntity) {
 		return get(uri, null, true);
 	}
 
-	public SimpleHttpResponse get(final String uri, Map<String, String> extraHeaders, boolean onlySucessfulEntity) {
+	public BasicHttpResponse get(final String uri, Map<String, String> extraHeaders, boolean onlySucessfulEntity) {
 		prepare(HttpMethod.GET, uri, extraHeaders, null);
 		try {
 			response = client.execute(request, context);
@@ -167,7 +167,7 @@ public class SimpleHttpClient implements Closeable {
 					return null;
 				}
 			}
-			SimpleHttpResponse toReturn = new SimpleHttpResponse(context);
+			BasicHttpResponse toReturn = new BasicHttpResponse(context);
 			response.close();
 			return toReturn;
 		} catch (ConnectTimeoutException e) {
@@ -203,11 +203,11 @@ public class SimpleHttpClient implements Closeable {
 		return null;
 	}
 	
-	public SimpleHttpResponse post(final String uri, Map<String, String> data) {
+	public BasicHttpResponse post(final String uri, Map<String, String> data) {
 		return post(uri, data, true);
 	}
 
-	public SimpleHttpResponse post(final String uri, Map<String, String> data, boolean onlySucessfulEntity) {
+	public BasicHttpResponse post(final String uri, Map<String, String> data, boolean onlySucessfulEntity) {
 		prepare(HttpMethod.POST, uri, null, data);
 		try {
 			response = client.execute(request, context);
@@ -224,7 +224,7 @@ public class SimpleHttpClient implements Closeable {
 					}
 				}
 			}
-			SimpleHttpResponse toReturn = new SimpleHttpResponse(context);
+			BasicHttpResponse toReturn = new BasicHttpResponse(context);
 			response.close();
 			return toReturn;
 		} catch (ConnectTimeoutException e) {
@@ -314,11 +314,11 @@ public class SimpleHttpClient implements Closeable {
 	}
 
 	public static void main(String[] args) throws Exception {
-		SimpleHttpClient client = new SimpleHttpClient();
+		BasicHttpClient client = new BasicHttpClient();
 		Map<String, String> data = new HashMap<String, String>();
 		data.put("p1", "123");
 		data.put("p2", "abc");
-		SimpleHttpResponse response = client.post(
+		BasicHttpResponse response = client.post(
 				"http://localhost:8080/WebTest/servlet/test", data, false);
 		if(client.getLastStatus() / 100 == 2) {
 			System.out.println(response.getUrl());

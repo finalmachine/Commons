@@ -10,7 +10,7 @@ import java.util.concurrent.TimeoutException;
 import org.apache.commons.lang3.SerializationUtils;
 import org.json.JSONObject;
 
-import com.gbi.commons.net.http.SimpleHttpClient;
+import com.gbi.commons.net.http.BasicHttpClient;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.Envelope;
@@ -37,7 +37,7 @@ public final class MsgConsumer extends MsgBase implements Runnable, Consumer {
 
 	@Override
 	public void run() {
-		SimpleHttpClient client = new SimpleHttpClient();
+		BasicHttpClient client = new BasicHttpClient();
 		Map<String, String> extraHeaders = new HashMap<String, String>();
 		extraHeaders.put("Authorization", "Basic Z3Vlc3Q6Z3Vlc3Q=");
 		

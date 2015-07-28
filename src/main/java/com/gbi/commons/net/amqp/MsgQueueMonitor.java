@@ -10,7 +10,7 @@ import java.util.Map;
 
 import org.json.JSONObject;
 
-import com.gbi.commons.net.http.SimpleHttpClient;
+import com.gbi.commons.net.http.BasicHttpClient;
 
 public class MsgQueueMonitor {
 
@@ -37,7 +37,7 @@ public class MsgQueueMonitor {
 			e1.printStackTrace();
 		}
 		// wait the web update <
-		SimpleHttpClient client = new SimpleHttpClient();
+		BasicHttpClient client = new BasicHttpClient();
 		Map<String, String> extraHeaders = new HashMap<String, String>();
 		extraHeaders.put("Authorization", "Basic Z3Vlc3Q6Z3Vlc3Q=");
 		try {
