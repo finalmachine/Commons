@@ -99,7 +99,7 @@ public class BasicHttpClient implements Closeable {
 	 * Host*			as you need
 	 * User-Agent		Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.130 Safari/537.36
 	 */
-	private void setHeaders(HttpRequestBase requestBase, Map<String, String> extraHeaders) {
+	protected void setHeaders(HttpRequestBase requestBase, Map<String, String> extraHeaders) {
 		requestBase.setHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,application/json;q=0.9,image/webp,*/*;q=0.8");
 		requestBase.setHeader("Accept-Language", "zh-CN,zh;q=0.8");
 		requestBase.setHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.130 Safari/537.36");
@@ -110,7 +110,7 @@ public class BasicHttpClient implements Closeable {
 		}
 	}
 	
-	private void prepare(HttpMethod method, String uri, Map<String, String> extraHeaders, Map<String, String> data) {
+	protected void prepare(HttpMethod method, String uri, Map<String, String> extraHeaders, Map<String, String> data) {
 		switch (method) {
 		case GET:
 			HttpGet requestGet = new HttpGet(uri);
@@ -284,7 +284,22 @@ public class BasicHttpClient implements Closeable {
 	public void setProxy(String hostname, int port) {
 		proxy = new HttpHost(hostname, port);
 	}
+	
+    /**
+     * Set proxy of the HttpClient by hostname and port.
+     *
+     * @param hostname  the hostname (IP or DNS name)
+     * @param port      the port number.
+     *                  {@code -1} indicates the scheme default port.
+     */
+	public void setProxy(String hostname, String port) {
+		proxy = new HttpHost(hostname, Integer.parseInt(port));
+	}
 
+	public void removeCurrentProxy() {
+		proxy = null;
+	}
+	
 	/**
 	 * 重写验证方法，取消检测ssl
 	 */
