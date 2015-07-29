@@ -1,11 +1,14 @@
 package com.gbi.commons.net.http;
 
 import java.net.UnknownHostException;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import com.gbi.commons.config.Params;
+import com.gbi.commons.params.Params;
+
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
@@ -13,7 +16,8 @@ import com.mongodb.MongoClient;
 
 public class ProxiesHttpClient extends BasicHttpClient {
 
-	private static ConcurrentLinkedQueue<String> proxypool = new ConcurrentLinkedQueue<>();
+	private static AtomicInteger index = new AtomicInteger(0);
+	private static ArrayList<String> proxypool = new ArrayList<>();
 	private static ReadWriteLock lock = new ReentrantReadWriteLock(false);
 
 	private String _tag = null;
@@ -24,28 +28,40 @@ public class ProxiesHttpClient extends BasicHttpClient {
 		}
 		_tag = tag;
 		lock.writeLock().lock();
-		if (proxypool.size() == 0) {
+		if (proxypool.isEmpty()) {
 			reloadProxyList();
+		} else {
+			System.out.println(proxypool.size());
 		}
 		lock.writeLock().unlock();
 	}
 
-	protected void getNextProxy() {
+	protected void changeProxy() {
 		lock.readLock().lock();
-		String proxyStr = proxypool.element();
+		String proxyStr = proxypool.get(index.incrementAndGet() % proxypool.size());
+		if (index.get() < 0) {
+			index.set(0);
+		}
 		super.setProxy(proxyStr.split(":")[0], proxyStr.split(":")[1]);
 		lock.readLock().unlock();
 	}
 	
+	@Override
+	protected void prepare(HttpMethod method, String uri, Map<String, String> extraHeaders, Map<String, String> data) {
+		changeProxy();
+		super.prepare(method, uri, extraHeaders, data);
+	}
+	
 	public void removeCurrentProxy() {
-		super.removeCurrentProxy();
 		lock.writeLock().lock();
-		proxypool.remove(_currentProxy);
-		_currentProxy = null;
-		if (proxypool.size() == 0) {
+		proxypool.remove(proxy.getHostName() + ":" + proxy.getPort());
+		if (proxypool.isEmpty()) {
 			reloadProxyList();
+		} else {
+			System.out.println("remain:" + proxypool.size());
 		}
 		lock.writeLock().unlock();
+		proxy = null;
 	}
 
 	/**
@@ -67,11 +83,19 @@ public class ProxiesHttpClient extends BasicHttpClient {
 		for (DBObject o : cursor) {
 			proxypool.add((String) o.get("_id"));
 		}
-		cursor.close();
 		mongo.close();
-		if (proxypool.size() == 0) {
+		if (proxypool.isEmpty()) {
 			throw new RuntimeException("no useful proxy in mongo");
 		}
-		System.out.println("reload proxy list form db, reload count: " + proxypool.size());
+		System.out.println("load proxy list form db, count: " + proxypool.size());
+	}
+	
+	public static void main(String[] args) {
+		ProxiesHttpClient client1 = new ProxiesHttpClient("CN");
+		BasicHttpResponse r = client1.get("http://localhost:8080");
+		if (r == null) {
+			client1.removeCurrentProxy();
+		}
+		client1.close();
 	}
 }

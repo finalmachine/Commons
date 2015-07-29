@@ -1,7 +1,7 @@
 package com.gbi.commons.net.http;
 
 public enum HttpMethod {
-	GET(false), POST(true), PUT(true), DELETE(false), PATCH(true);
+	GET(false), POST(true);
 
     private final boolean hasBody;
 

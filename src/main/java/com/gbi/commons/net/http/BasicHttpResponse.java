@@ -26,7 +26,15 @@ public class BasicHttpResponse {
 	public BasicHttpResponse(HttpClientContext context) throws IOException {
 		HttpHost host = (HttpHost) context.getAttribute(HttpClientContext.HTTP_TARGET_HOST);
 		HttpRequest request = (HttpRequest) context.getAttribute(HttpClientContext.HTTP_REQUEST);
-		url = host.toURI() + request.getRequestLine().getUri();
+		String hostUri = host.toURI();
+		String requestLine = request.getRequestLine().getUri();
+		while (requestLine.startsWith(hostUri)) {
+			requestLine = requestLine.substring(hostUri.length());
+		}
+		while (hostUri.endsWith("http")) {
+			hostUri = hostUri.substring(0, hostUri.length() - 4);
+		}
+		url = hostUri + requestLine;
 		HttpResponse response = (HttpResponse) context.getAttribute(HttpClientContext.HTTP_RESPONSE);
 		headers = response.getAllHeaders();
 		content = EntityUtils.toByteArray(response.getEntity());
