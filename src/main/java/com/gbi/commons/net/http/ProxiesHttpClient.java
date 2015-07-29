@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import com.gbi.commons.params.Params;
+import com.gbi.commons.config.Params;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCursor;
