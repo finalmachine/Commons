@@ -2,6 +2,7 @@ package com.gbi.commons.config;
 
 public class Params {
 	public enum MongoDB {
+		NAVISUS("127.0.0.1", 27017, "NAVISUS"),
 		PROXIES("127.0.0.1", 27017, "PROXIES");
 		
 		public String host;

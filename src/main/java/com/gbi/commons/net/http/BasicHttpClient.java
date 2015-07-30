@@ -95,11 +95,8 @@ public class BasicHttpClient implements Closeable {
 		// 将HTTPS的网站证书设置成不检查的状态
 		SSLContext sslcontext = null;
 		try {
-		//	sslcontext = SSLContext.getInstance("TLSv1");
 			sslcontext = SSLContexts.createDefault();
 			sslcontext.init(null, new TrustManager[] { trustAllManager }, null);
-	//	} catch (NoSuchAlgorithmException e) {
-	//		throw new RuntimeException(e);
 		} catch (KeyManagementException e) {
 			throw new RuntimeException(e);
 		}
