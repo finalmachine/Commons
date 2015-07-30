@@ -1,7 +1,9 @@
 package com.gbi.commons.base.service;
 
 import java.net.UnknownHostException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -12,21 +14,28 @@ import org.jsoup.select.Elements;
 import com.gbi.commons.config.Params;
 import com.gbi.commons.net.http.BasicHttpClient;
 import com.gbi.commons.net.http.BasicHttpResponse;
+import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
-import com.mongodb.DB;
 import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 
-public class ProxyGrab {
+public class ProxyPool {
+	
+	private static final Map<String, String> checkSubject;
 	
 	private static MongoClient client = null;
+	private static DBCollection collection = null;
 	static {
 		try {
 			client = new MongoClient(Params.MongoDB.PROXIES.host, Params.MongoDB.PROXIES.port);
+			collection = client.getDB(Params.MongoDB.PROXIES.database).getCollection("proxies");
 		} catch (UnknownHostException e) {
 			throw new RuntimeException(e);
 		}
+		checkSubject = new HashMap<>();
+		checkSubject.put("CN", "http://www.baidu.com/img/bd_logo1.png"); // 百度logo
 	}
 	
 	// 抓取有代理的代理服务器地址
@@ -37,8 +46,8 @@ public class ProxyGrab {
 			browser.close();
 			throw new RuntimeException("有代理访问失败");
 		}
+		int count = 0;
 		// 抓取首页 >
-		DBCollection collection = client.getDB(Params.MongoDB.PROXIES.database).getCollection("proxies");
 		Elements lines = response.getDocument().select("ul.newslist_line>li>a");
 		for (Element line : lines) {
 			response = browser.get(line.absUrl("href"));
@@ -59,22 +68,49 @@ public class ProxyGrab {
 					proxy.put("type", m.group(4) == null ? "" : "anonymous");
 					proxy.put("location", m.group(5));
 					collection.save(proxy);
-					System.out.println("------------");
+					++count;
 				}
 			}
-			break;// TODO
 		}
 		// 抓取首页 <
+		System.out.println("网站:有代理 共捕获数据 " + count + " 条");
+		browser.close();
+	}
+	
+	public static void checkProxyPool() {
+		DBCursor cursor = collection.find();
+		BasicHttpClient browser = new BasicHttpClient();
+		for (DBObject proxyInfo : cursor) {
+			browser.setProxy((String) proxyInfo.get("IPv4"), (String) proxyInfo.get("port"));
+			BasicDBList tag = new BasicDBList();
+			BasicDBList delay = new BasicDBList();
+			for (String key : checkSubject.keySet()) {
+				long beginTime = System.currentTimeMillis();
+				BasicHttpResponse r = browser.get(checkSubject.get(key));
+				if (r == null) {
+					continue;
+				}
+				long endTime = System.currentTimeMillis();
+				tag.add(key);
+				delay.add(endTime - beginTime);
+			}
+			if (tag.size() == 0) {
+				System.out.println(proxyInfo.get("_id") + " 没什么用");
+				collection.remove(proxyInfo);
+			} else {
+				DBObject newProxyInfo = new BasicDBObject(proxyInfo.toMap());
+				newProxyInfo.put("tag", tag);
+				newProxyInfo.put("delay", delay);
+				collection.save(newProxyInfo);
+			}
+		}
+		cursor.close();
 		browser.close();
 	}
 
 	public static void main(String[] args) {
 	//	GrabYoudaili();
-		DB d1 = client.getDB(Params.MongoDB.PROXIES.database);
-		DB d2 = client.getDB(Params.MongoDB.PROXIES.database);
-		DBCollection c1 = d1.getCollection("proxies");
-		DBCollection c2 = d2.getCollection("proxies");
-		System.out.println(d1 == d2);
-		System.out.println(c1 == c2);
+		checkProxyPool();
+		client.close();
 	}
 }

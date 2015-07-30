@@ -48,7 +48,9 @@ public class ProxiesHttpClient extends BasicHttpClient {
 	
 	@Override
 	protected void prepare(HttpMethod method, String uri, Map<String, String> extraHeaders, Map<String, String> data) {
-		changeProxy();
+		if (lastStatus != 302) {
+			changeProxy();
+		}
 		super.prepare(method, uri, extraHeaders, data);
 	}
 	
