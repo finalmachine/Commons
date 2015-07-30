@@ -35,7 +35,7 @@ public class ProxyPool {
 			throw new RuntimeException(e);
 		}
 		checkSubject = new HashMap<>();
-		checkSubject.put("CN", "http://www.baidu.com/img/bd_logo1.png"); // 百度logo
+		checkSubject.put("CN", "http://www.baidu.com.cn/img/bd_logo1.png"); // 百度logo
 	}
 	
 	// 抓取有代理的代理服务器地址
