@@ -3,6 +3,7 @@ package com.gbi.commons.net.http;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
@@ -92,6 +93,10 @@ public class BasicHttpResponse {
 	public Header[] getHeaders() {
 		return headers;
 	}
+	
+	public String getMd5() {
+		return DigestUtils.md5Hex(content);
+	}
 
 	public String getUrl() {
 		return url;
@@ -131,5 +136,14 @@ public class BasicHttpResponse {
 			}
 		}
 		return null;
+	}
+	
+	@Override
+	public String toString() {
+		try {
+			return new String(content, contentCharset == null ? "US-ASCII" : contentCharset);
+		} catch (UnsupportedEncodingException e) {
+			throw new RuntimeException(e);
+		}
 	}
 }

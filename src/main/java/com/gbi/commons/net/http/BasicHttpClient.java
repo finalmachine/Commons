@@ -234,6 +234,15 @@ public class BasicHttpClient implements Closeable {
 			lastStatus = response.getStatusLine().getStatusCode();
 			if (lastStatus == 302) {
 				String url = response.getFirstHeader("Location").getValue();
+				if (!url.startsWith("http")) {
+					int i = uri.indexOf('/', 8);
+					if (i == -1) {
+						url = uri + url;
+					} else {
+						url = uri.substring(0, i) + url;
+					}
+				}
+				System.out.println("url:" + url);
 				response.close();
 				return get(url, null, onlySucessfulEntity);
 			} else {
@@ -341,18 +350,11 @@ public class BasicHttpClient implements Closeable {
 
 	public static void main(String[] args) throws Exception {
 		BasicHttpClient client = new BasicHttpClient();
-		Map<String, String> data = new HashMap<String, String>();
-		data.put("p1", "123");
-		data.put("p2", "abc");
-		BasicHttpResponse response = client.post("http://localhost:8080/WebTest/servlet/test", data, false);
-		if (client.getLastStatus() / 100 == 2) {
-			System.out.println(response.getUrl());
-			System.out.println(response.getContentType());
-			System.out.println(response.getContentCharset());
-			System.out.println(response.getContent().length);
-		} else {
-			System.out.println("code:" + client.getLastStatus());
-		}
+		Map<String, String> data = new HashMap<>();
+		data.put("message", "中文");
+		BasicHttpResponse re = client.post("https://localhost:8443/WebTest/servlet/copy", data);
+		System.out.println(client.getLastStatus());
+		System.out.println(re.getDocument());
 		client.close();
 	}
 }

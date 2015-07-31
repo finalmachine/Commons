@@ -8,7 +8,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import com.gbi.commons.config.Params;
-
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
@@ -21,6 +20,16 @@ public class ProxiesHttpClient extends BasicHttpClient {
 	private static ReadWriteLock lock = new ReentrantReadWriteLock(false);
 
 	private String _tag = null;
+
+	public ProxiesHttpClient() {
+		lock.writeLock().lock();
+		if (proxypool.isEmpty()) {
+			reloadProxyList();
+		} else {
+			System.out.println("pool size:" + proxypool.size());
+		}
+		lock.writeLock().unlock();
+	}
 
 	public ProxiesHttpClient(String tag) {
 		if (tag == null || tag.trim().length() == 0) {
@@ -45,22 +54,25 @@ public class ProxiesHttpClient extends BasicHttpClient {
 		super.setProxy(proxyStr.split(":")[0], proxyStr.split(":")[1]);
 		lock.readLock().unlock();
 	}
-	
+
 	@Override
-	protected void prepare(HttpMethod method, String uri, Map<String, String> extraHeaders, Map<String, String> data) {
+	protected void prepare(HttpMethod method, String uri, Map<String, String> extraHeaders,
+			Map<String, String> data) {
 		if (lastStatus != 302) {
 			changeProxy();
 		}
 		super.prepare(method, uri, extraHeaders, data);
 	}
-	
+
 	public void removeCurrentProxy() {
 		lock.writeLock().lock();
-		proxypool.remove(proxy.getHostName() + ":" + proxy.getPort());
-		if (proxypool.isEmpty()) {
-			reloadProxyList();
-		} else {
-			System.out.println("remain:" + proxypool.size());
+		if (proxypool.size() > 300) {
+			proxypool.remove(proxy.getHostName() + ":" + proxy.getPort());
+			if (proxypool.isEmpty()) {
+				reloadProxyList();
+			} else {
+				System.out.println("remain:" + proxypool.size());
+			}
 		}
 		lock.writeLock().unlock();
 		proxy = null;
@@ -81,7 +93,8 @@ public class ProxiesHttpClient extends BasicHttpClient {
 			query.put("tag", _tag);
 		}
 		DBObject key = new BasicDBObject().append("_id", 1);
-		DBCursor cursor = mongo.getDB(Params.MongoDB.PROXIES.database).getCollection("proxies").find(query, key);
+		DBCursor cursor = mongo.getDB(Params.MongoDB.PROXIES.database).getCollection("proxies").find(query,
+				key);
 		for (DBObject o : cursor) {
 			proxypool.add((String) o.get("_id"));
 		}
@@ -91,7 +104,7 @@ public class ProxiesHttpClient extends BasicHttpClient {
 		}
 		System.out.println("load proxy list form db, count: " + proxypool.size());
 	}
-	
+
 	public static void main(String[] args) {
 		ProxiesHttpClient client1 = new ProxiesHttpClient("CN");
 		BasicHttpResponse r = client1.get("http://localhost:8080");
