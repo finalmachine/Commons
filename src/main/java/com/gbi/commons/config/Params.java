@@ -15,4 +15,9 @@ public class Params {
 			this.database = database;
 		}
 	}
+	
+	public static final class StableProxy {
+		public static String host = "192.168.0.116";
+		public static int port = 1080;
+	}
 }

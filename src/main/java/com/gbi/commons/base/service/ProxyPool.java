@@ -16,14 +16,16 @@ import com.gbi.commons.net.http.BasicHttpClient;
 import com.gbi.commons.net.http.BasicHttpResponse;
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
+import com.mongodb.Bytes;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 
 public class ProxyPool {
-	
+
 	private static final Map<String, String> checkSubject;
+	private static final Map<String, String> subjectMd5;
 	
 	private static MongoClient client = null;
 	private static DBCollection collection = null;
@@ -35,6 +37,7 @@ public class ProxyPool {
 			throw new RuntimeException(e);
 		}
 		checkSubject = new HashMap<>();
+		subjectMd5 = new HashMap<>();
 		checkSubject.put("CN", "http://www.baidu.com.cn/img/bd_logo1.png"); // 百度logo
 	}
 	
@@ -44,7 +47,7 @@ public class ProxyPool {
 		BasicHttpResponse response = browser.get("http://www.youdaili.net/Daili/guowai/");
 		if (response == null) {
 			browser.close();
-			throw new RuntimeException("有代理访问失败");
+			throw new RuntimeException("有代理国外代理访问失败");
 		}
 		int count = 0;
 		// 抓取首页 >
@@ -78,8 +81,9 @@ public class ProxyPool {
 	}
 	
 	public static void checkProxyPool() {
-		DBCursor cursor = collection.find();
 		BasicHttpClient browser = new BasicHttpClient();
+		DBCursor cursor = collection.find();
+		cursor.addOption(Bytes.QUERYOPTION_NOTIMEOUT);
 		for (DBObject proxyInfo : cursor) {
 			browser.setProxy((String) proxyInfo.get("IPv4"), (String) proxyInfo.get("port"));
 			BasicDBList tag = new BasicDBList();
@@ -98,10 +102,10 @@ public class ProxyPool {
 				System.out.println(proxyInfo.get("_id") + " 没什么用");
 				collection.remove(proxyInfo);
 			} else {
-				DBObject newProxyInfo = new BasicDBObject(proxyInfo.toMap());
-				newProxyInfo.put("tag", tag);
-				newProxyInfo.put("delay", delay);
-				collection.save(newProxyInfo);
+			//	DBObject newProxyInfo = new BasicDBObject(proxyInfo.toMap());
+				proxyInfo.put("tag", tag);
+				proxyInfo.put("delay", delay);
+				collection.save(proxyInfo);
 			}
 		}
 		cursor.close();
