@@ -4,6 +4,7 @@ import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -21,24 +22,32 @@ import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
+import com.rabbitmq.client.AMQP.Basic;
 
 public class ProxyPool {
 
-	private static final Map<String, String> checkSubject;
-	private static final Map<String, String> subjectMd5;
+	private static final Map<String, String> checkSubject = new HashMap<>();
+	private static final Map<String, String> subjectMd5 = new HashMap<>();
 	
 	private static MongoClient client = null;
 	private static DBCollection collection = null;
-	static {
+	
+	private static void init() {
 		try {
 			client = new MongoClient(Params.MongoDB.PROXIES.host, Params.MongoDB.PROXIES.port);
 			collection = client.getDB(Params.MongoDB.PROXIES.database).getCollection("proxies");
 		} catch (UnknownHostException e) {
 			throw new RuntimeException(e);
 		}
-		checkSubject = new HashMap<>();
-		subjectMd5 = new HashMap<>();
 		checkSubject.put("CN", "http://www.baidu.com.cn/img/bd_logo1.png"); // 百度logo
+		
+		BasicHttpClient c = new BasicHttpClient();
+		c.setProxy(Params.StableProxy.host, Params.StableProxy.port);
+		c.close();
+	}
+	
+	private static void exit() {
+		client.close();
 	}
 	
 	// 抓取有代理的代理服务器地址
@@ -84,6 +93,7 @@ public class ProxyPool {
 		BasicHttpClient browser = new BasicHttpClient();
 		DBCursor cursor = collection.find();
 		cursor.addOption(Bytes.QUERYOPTION_NOTIMEOUT);
+		cursor.maxTime(7, TimeUnit.DAYS);
 		for (DBObject proxyInfo : cursor) {
 			browser.setProxy((String) proxyInfo.get("IPv4"), (String) proxyInfo.get("port"));
 			BasicDBList tag = new BasicDBList();
@@ -113,8 +123,9 @@ public class ProxyPool {
 	}
 
 	public static void main(String[] args) {
+		init();
 	//	GrabYoudaili();
 		checkProxyPool();
-		client.close();
+		exit();
 	}
 }
