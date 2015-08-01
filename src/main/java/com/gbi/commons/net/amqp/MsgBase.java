@@ -54,13 +54,14 @@ public class MsgBase implements Closeable {
 	}
 
 	@Override
-	public void close() throws IOException {
+	public void close() {
 		try {
 			_channel.close();
+			_connection.close();
 		} catch (TimeoutException e) {
 			throw new RuntimeException(e);
-		} finally {
-			_connection.close();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
 		}
 	}
 }

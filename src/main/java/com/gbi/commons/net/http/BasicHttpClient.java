@@ -18,9 +18,11 @@ import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
+import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpHost;
 import org.apache.http.NameValuePair;
 import org.apache.http.NoHttpResponseException;
+import org.apache.http.ProtocolException;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.RedirectException;
@@ -61,6 +63,8 @@ public class BasicHttpClient implements Closeable {
 	protected static final int SocketExceptionError = -5; // 有可能是服务器忽然被关闭了
 	protected static final int NoHttpResponseError = -6;
 	protected static final int SSLHandshakeError = -7;
+	protected static final int ProtocolError = -8;
+	protected static final int ConnectionClosedError = -9; // 有可能是Content-Length 与 实际接收到的 不一致
 
 	/**
 	 * 重写验证方法，取消检测ssl
@@ -199,6 +203,8 @@ public class BasicHttpClient implements Closeable {
 		} catch (ClientProtocolException e) {
 			if (e.getCause() instanceof RedirectException) {
 				lastStatus = OverMaxRedirectsError;
+			} else if (e.getCause() instanceof ProtocolException) {
+				lastStatus = ProtocolError;
 			} else {
 				System.err.println("throw");
 				throw new RuntimeException(e);
@@ -209,6 +215,8 @@ public class BasicHttpClient implements Closeable {
 			lastStatus = NoHttpResponseError;
 		} catch (SSLHandshakeException e) {
 			lastStatus = SSLHandshakeError;
+		} catch (ConnectionClosedException e) {
+			lastStatus = ConnectionClosedError;
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		} finally {
@@ -265,6 +273,8 @@ public class BasicHttpClient implements Closeable {
 		} catch (ClientProtocolException e) {
 			if (e.getCause() instanceof RedirectException) {
 				lastStatus = OverMaxRedirectsError;
+			} else if (e.getCause() instanceof ProtocolException) {
+				lastStatus = ProtocolError;
 			} else {
 				System.err.println("throw");
 				throw new RuntimeException(e);
@@ -275,6 +285,8 @@ public class BasicHttpClient implements Closeable {
 			lastStatus = NoHttpResponseError;
 		} catch (SSLHandshakeException e) {
 			lastStatus = SSLHandshakeError;
+		} catch (ConnectionClosedException e) {
+			lastStatus = ConnectionClosedError;
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		} finally {

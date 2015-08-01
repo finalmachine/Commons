@@ -1,10 +1,12 @@
 package com.gbi.commons.base.service;
 
+import java.io.IOException;
 import java.net.UnknownHostException;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -13,32 +15,42 @@ import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 
 import com.gbi.commons.config.Params;
+import com.gbi.commons.net.amqp.MsgConsumers;
+import com.gbi.commons.net.amqp.MsgProducer;
+import com.gbi.commons.net.amqp.MsgWorker;
+import com.gbi.commons.net.amqp.MsgWorkerFactory;
 import com.gbi.commons.net.http.BasicHttpClient;
 import com.gbi.commons.net.http.BasicHttpResponse;
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
-import com.mongodb.Bytes;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
-import com.rabbitmq.client.AMQP.Basic;
 
 public class ProxyPool {
 
+	private static final String queueName = "ProxyPool";
 	private static final Map<String, String> checkSubject = new HashMap<>();
-	private static final Map<String, String> subjectMd5 = new HashMap<>();
+//	private static final Map<String, String> subjectMd5 = new HashMap<>();
 	
 	private static MongoClient client = null;
 	private static DBCollection collection = null;
+	private static MsgProducer<String> producer = null;
 	
 	private static void init() {
 		try {
 			client = new MongoClient(Params.MongoDB.PROXIES.host, Params.MongoDB.PROXIES.port);
 			collection = client.getDB(Params.MongoDB.PROXIES.database).getCollection("proxies");
+			producer = new MsgProducer<>(queueName);
 		} catch (UnknownHostException e) {
 			throw new RuntimeException(e);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		} catch (TimeoutException e) {
+			throw new RuntimeException(e);
 		}
+		checkSubject.put("US", "http://www.google.com");
 		checkSubject.put("CN", "http://www.baidu.com.cn/img/bd_logo1.png"); // 百度logo
 		
 		BasicHttpClient c = new BasicHttpClient();
@@ -47,6 +59,7 @@ public class ProxyPool {
 	}
 	
 	private static void exit() {
+		producer.close();
 		client.close();
 	}
 	
@@ -74,12 +87,15 @@ public class ProxyPool {
 				if (m.find()) {
 					DBObject proxy = new BasicDBObject();
 					proxy.put("_id", m.group(1) + ":" + m.group(2));
-					proxy.put("IPv4", m.group(1));
-					proxy.put("port", m.group(2));
-					proxy.put("protocol", m.group(3));
-					proxy.put("type", m.group(4) == null ? "" : "anonymous");
-					proxy.put("location", m.group(5));
-					collection.save(proxy);
+					if (collection.findOne(proxy) == null) {
+						proxy.put("IPv4", m.group(1));
+						proxy.put("port", m.group(2));
+						proxy.put("protocol", m.group(3));
+						proxy.put("type", m.group(4) == null ? "" : "anonymous");
+						proxy.put("source", "youdaili");
+						proxy.put("location", m.group(5));
+						collection.save(proxy);
+					}
 					++count;
 				}
 			}
@@ -90,36 +106,47 @@ public class ProxyPool {
 	}
 	
 	public static void checkProxyPool() {
-		BasicHttpClient browser = new BasicHttpClient();
-		DBCursor cursor = collection.find();
-		cursor.addOption(Bytes.QUERYOPTION_NOTIMEOUT);
-		cursor.maxTime(7, TimeUnit.DAYS);
+		DBCursor cursor = collection.find(new BasicDBObject(), new BasicDBObject("_id", 1));
 		for (DBObject proxyInfo : cursor) {
-			browser.setProxy((String) proxyInfo.get("IPv4"), (String) proxyInfo.get("port"));
-			BasicDBList tag = new BasicDBList();
-			BasicDBList delay = new BasicDBList();
-			for (String key : checkSubject.keySet()) {
-				long beginTime = System.currentTimeMillis();
-				BasicHttpResponse r = browser.get(checkSubject.get(key));
-				if (r == null) {
-					continue;
-				}
-				long endTime = System.currentTimeMillis();
-				tag.add(key);
-				delay.add(endTime - beginTime);
-			}
-			if (tag.size() == 0) {
-				System.out.println(proxyInfo.get("_id") + " 没什么用");
-				collection.remove(proxyInfo);
-			} else {
-			//	DBObject newProxyInfo = new BasicDBObject(proxyInfo.toMap());
-				proxyInfo.put("tag", tag);
-				proxyInfo.put("delay", delay);
-				collection.save(proxyInfo);
-			}
+			producer.send((String) proxyInfo.get("_id"));
 		}
 		cursor.close();
+		new MsgConsumers(queueName, 8, new MsgWorkerFactory<String>() {
+			@Override
+			public MsgWorker<String> newWorker() {
+				return socketAddr ->  checkProxy(socketAddr);
+			}
+		}).run();
+	}
+	
+	private static boolean checkProxy(String socketAddr) {
+		System.out.println("begin " + socketAddr);
+		BasicHttpClient browser = new BasicHttpClient();
+		browser.setProxy(socketAddr.split(":")[0], socketAddr.split(":")[1]);
+		BasicDBList tag = new BasicDBList();
+		BasicDBList delay = new BasicDBList();
+		for (String key : checkSubject.keySet()) {
+			long beginTime = System.currentTimeMillis();
+			BasicHttpResponse r = browser.get(checkSubject.get(key));
+			if (r == null) {
+				continue;
+			}
+			long endTime = System.currentTimeMillis();
+			tag.add(key);
+			delay.add(endTime - beginTime);
+		}
+		if (tag.size() == 0) {
+			System.out.println(socketAddr + " 没什么用");
+			collection.remove(new BasicDBObject("_id", socketAddr));
+		} else {
+			DBObject proxyInfo = collection.findOne(new BasicDBObject("_id", socketAddr));
+			proxyInfo.put("tag", tag);
+			proxyInfo.put("delay", delay);
+			proxyInfo.put("updateTime", Calendar.getInstance().getTime());
+			collection.save(proxyInfo);
+		}
 		browser.close();
+		return true;
 	}
 
 	public static void main(String[] args) {

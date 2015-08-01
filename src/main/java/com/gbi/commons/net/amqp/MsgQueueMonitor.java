@@ -2,11 +2,15 @@ package com.gbi.commons.net.amqp;
 
 import java.io.IOException;
 import java.net.URLEncoder;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
 import org.json.JSONObject;
 
@@ -43,6 +47,8 @@ public class MsgQueueMonitor {
 		try {
 			String url = "http://localhost:15672/api/queues/" + URLEncoder.encode(_hostName, "UTF-8") + "/"
 					+ URLEncoder.encode(_queueName, "UTF-8");
+			TimeZone.setDefault(TimeZone.getTimeZone("GMT+8"));
+			DateFormat format = new SimpleDateFormat("yyyy-MM-dd hh:mm");
 			int messageNum = -1;
 			while (true) {
 				JSONObject json = new JSONObject(new String(client.get(url, extraHeaders).getContent()));
@@ -54,7 +60,8 @@ public class MsgQueueMonitor {
 					break;
 				} else {
 					if (num != messageNum) {
-						System.out.println(new Date() + ":" + num + " remain");
+						Date date = Calendar.getInstance().getTime();
+						System.out.println(format.format(date) + ">" + "还有 " + num + " 个消息未处理");
 						messageNum = num;
 					}
 				}
