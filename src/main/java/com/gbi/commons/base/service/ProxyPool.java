@@ -10,6 +10,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
@@ -51,7 +52,7 @@ public class ProxyPool {
 			throw new RuntimeException(e);
 		}
 		checkSubject.put("US", "http://www.google.com");
-		checkSubject.put("CN", "http://www.baidu.com.cn/img/bd_logo1.png"); // 百度logo
+		checkSubject.put("CN", "http://www.shanghai.gov.cn/newshanghai/img/color-logo-hd.png"); // 百度logo
 		
 		BasicHttpClient c = new BasicHttpClient();
 		c.setProxy(Params.StableProxy.host, Params.StableProxy.port);
@@ -80,23 +81,36 @@ public class ProxyPool {
 				System.err.println("丢失一个网页");
 				continue;
 			}
-			List<TextNode> textNodes = response.getDocument().select("div.cont_font>p").first().textNodes();
-			Pattern pattern = Pattern.compile("(\\d+\\.\\d+\\.\\d+\\.\\d+):(\\d+)@([^@#]*)#(【匿】){0,1}([^#]*)");
-			for (TextNode textNode : textNodes) {
-				Matcher m = pattern.matcher(textNode.text());
-				if (m.find()) {
-					DBObject proxy = new BasicDBObject();
-					proxy.put("_id", m.group(1) + ":" + m.group(2));
-					if (collection.findOne(proxy) == null) {
-						proxy.put("IPv4", m.group(1));
-						proxy.put("port", m.group(2));
-						proxy.put("protocol", m.group(3));
-						proxy.put("type", m.group(4) == null ? "" : "anonymous");
-						proxy.put("source", "youdaili");
-						proxy.put("location", m.group(5));
-						collection.save(proxy);
+			while (true) {
+				Document dom = response.getDocument();
+				List<TextNode> textNodes = response.getDocument().select("div.cont_font>p").first().textNodes();
+				Pattern pattern = Pattern.compile("(\\d+\\.\\d+\\.\\d+\\.\\d+):(\\d+)@([^@#]*)#(【匿】){0,1}([^#]*)");
+				for (TextNode textNode : textNodes) {
+					Matcher m = pattern.matcher(textNode.text());
+					if (m.find()) {
+						DBObject proxy = new BasicDBObject();
+						proxy.put("_id", m.group(1) + ":" + m.group(2));
+						if (collection.findOne(proxy) == null) {
+							proxy.put("IPv4", m.group(1));
+							proxy.put("port", m.group(2));
+							proxy.put("protocol", m.group(3));
+							proxy.put("type", m.group(4) == null ? "" : "anonymous");
+							proxy.put("source", "youdaili");
+							proxy.put("location", m.group(5));
+							collection.save(proxy);
+						}
+						++count;
 					}
-					++count;
+				}
+				Element a = dom.select("ul>pagelist>li>a:containsOwn(下一页)").first();
+				if (a == null) {
+					break;
+				} else {
+					if ("#".equals(a.attr("href"))) {
+						break;
+					} else {
+						response = browser.get(a.absUrl("href"));
+					}
 				}
 			}
 		}
@@ -111,7 +125,7 @@ public class ProxyPool {
 			producer.send((String) proxyInfo.get("_id"));
 		}
 		cursor.close();
-		new MsgConsumers(queueName, 8, new MsgWorkerFactory<String>() {
+		new MsgConsumers(queueName, 20, new MsgWorkerFactory<String>() {
 			@Override
 			public MsgWorker<String> newWorker() {
 				return socketAddr ->  checkProxy(socketAddr);
@@ -135,6 +149,7 @@ public class ProxyPool {
 			tag.add(key);
 			delay.add(endTime - beginTime);
 		}
+		System.out.println(socketAddr + " out");
 		if (tag.size() == 0) {
 			System.out.println(socketAddr + " 没什么用");
 			collection.remove(new BasicDBObject("_id", socketAddr));
@@ -146,12 +161,13 @@ public class ProxyPool {
 			collection.save(proxyInfo);
 		}
 		browser.close();
+		System.out.println("check return");
 		return true;
 	}
 
 	public static void main(String[] args) {
 		init();
-	//	GrabYoudaili();
+		GrabYoudaili();
 		checkProxyPool();
 		exit();
 	}

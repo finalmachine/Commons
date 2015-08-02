@@ -52,8 +52,10 @@ public class BasicHttpClient implements Closeable {
 
 	// default headers
 	protected static final String Accept = "text/html,application/xhtml+xml,application/xml;q=0.9,application/json;q=0.9,image/webp,*/*;q=0.8";
+	protected static final String Accept_Charset = "utf-8, gbk;q=0.9";
 	protected static final String Accept_Language = "zh-CN,zh;q=0.8";
 	protected static final String User_Agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.130 Safari/537.36";
+
 
 	// default error code
 	protected static final int ConnectTimeoutError = -1;
@@ -117,6 +119,7 @@ public class BasicHttpClient implements Closeable {
 	 * 					application/xml;q=0.9, application/json;q=0.9,
 	 * 					image/webp,
 	 * 					other;q=0.8
+	 * Accept-Charset	utf-8, gbk;q=0.9, iso-8859-1;q=0.8
 	 * Accept-Encoding*	gzip, deflate
 	 * Accept-Language	zh-CN,zh;q=0.8
 	 * Connection*		keep-alive
@@ -126,6 +129,7 @@ public class BasicHttpClient implements Closeable {
 	protected void setHeaders(HttpRequestBase requestBase, Map<String, String> extraHeaders) {
 		requestBase.setHeader("Accept", Accept);
 		requestBase.setHeader("Accept-Language", Accept_Language);
+		requestBase.setHeader("Accept-Charset", Accept_Charset);
 		requestBase.setHeader("User-Agent", User_Agent);
 		if (extraHeaders != null) {
 			for (String headName : extraHeaders.keySet()) {
@@ -160,7 +164,7 @@ public class BasicHttpClient implements Closeable {
 		setHeaders(request, extraHeaders);
 		// 设置http请求的配置参数
 		config = RequestConfig.custom()//
-				.setMaxRedirects(defaultMaxRedirects)//
+				.setMaxRedirects(0)//
 				.setSocketTimeout(networkTimeout == -1 ? defaultSocketTimeout : networkTimeout)//
 				.setConnectTimeout(networkTimeout == -1 ? defaultConnectTimeout : networkTimeout)//
 				.setConnectionRequestTimeout(networkTimeout == -1 ? setConnectionRequestTimeout : networkTimeout)//
@@ -193,6 +197,7 @@ public class BasicHttpClient implements Closeable {
 			}
 			BasicHttpResponse toReturn = new BasicHttpResponse(context);
 			response.close();
+			System.out.println("return http " + uri);
 			return toReturn;
 		} catch (ConnectTimeoutException e) {
 			lastStatus = ConnectTimeoutError;
@@ -250,7 +255,6 @@ public class BasicHttpClient implements Closeable {
 						url = uri.substring(0, i) + url;
 					}
 				}
-				System.out.println("url:" + url);
 				response.close();
 				return get(url, null, onlySucessfulEntity);
 			} else {
