@@ -197,7 +197,6 @@ public class BasicHttpClient implements Closeable {
 			}
 			BasicHttpResponse toReturn = new BasicHttpResponse(context);
 			response.close();
-			System.out.println("return http " + uri);
 			return toReturn;
 		} catch (ConnectTimeoutException e) {
 			lastStatus = ConnectTimeoutError;
