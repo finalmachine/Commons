@@ -91,17 +91,23 @@ public class ProxyPool {
 					for (TextNode textNode : textNodes) {
 						Matcher m = pattern.matcher(textNode.text());
 						if (m.find()) {
-							DBObject proxy = new BasicDBObject();
-							proxy.put("_id", m.group(1) + ":" + m.group(2));
-							if (collection.findOne(proxy) == null) {
+							DBObject proxy = collection.findOne(new BasicDBObject("_id", m.group(1) + ":" + m.group(2)));
+							if (proxy == null) {
+								proxy = new BasicDBObject();
+								proxy.put("_id", m.group(1) + ":" + m.group(2));
 								proxy.put("IPv4", m.group(1));
 								proxy.put("port", m.group(2));
 								proxy.put("protocol", m.group(3));
 								proxy.put("type", m.group(4) == null ? "" : "anonymous");
 								proxy.put("source", "youdaili");
 								proxy.put("location", m.group(5));
-								collection.save(proxy);
+							} else {
+								proxy.put("protocol", m.group(3));
+								proxy.put("type", m.group(4) == null ? "" : "anonymous");
+								proxy.put("source", "youdaili");
+								proxy.put("location", m.group(5));
 							}
+							collection.save(proxy);
 							++count;
 						}
 					}
@@ -165,7 +171,7 @@ public class ProxyPool {
 			collection.save(proxyInfo);
 		}
 		browser.close();
-		System.out.println("check return");
+		System.out.println("end " + socketAddr);
 		return true;
 	}
 

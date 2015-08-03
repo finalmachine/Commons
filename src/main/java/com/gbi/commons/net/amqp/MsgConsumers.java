@@ -67,14 +67,11 @@ public class MsgConsumers {
 				result = _worker.work(SerializationUtils.deserialize(body));
 				System.out.println(result);
 			} catch (Exception e) {
-				System.out.println("return e");
 				e.printStackTrace();
 				_channel.basicRecover(true);
-				System.out.println("re");
 				return;
 			}
 			if (result) {
-				System.out.println("before return");
 				_channel.basicAck(envelope.getDeliveryTag(), false);
 				System.out.println("return");
 				return;
