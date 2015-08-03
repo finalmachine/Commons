@@ -67,6 +67,7 @@ public class ProxyPool {
 	// 抓取有代理的代理服务器地址
 	public static void GrabYoudaili() {
 		BasicHttpClient browser = new BasicHttpClient();
+		String[] urls = new String[] {"http://www.youdaili.net/Daili/guowai/", ""};
 		BasicHttpResponse response = browser.get("http://www.youdaili.net/Daili/guowai/");
 		if (response == null) {
 			browser.close();
