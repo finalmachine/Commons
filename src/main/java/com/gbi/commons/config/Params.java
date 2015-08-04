@@ -15,9 +15,29 @@ public class Params {
 			this.database = database;
 		}
 	}
+
+	public enum StableProxy {
+		ZHITAO("192.168.0.116", 1080);
+		
+		public String host;
+		public int port;
+		
+		StableProxy(String host, int port) {
+			this.host = host;
+			this.port = port;
+		}
+	}
 	
-	public static final class StableProxy {
-		public static String host = "192.168.0.116";
-		public static int port = 1080;
+	public enum RabbitMQ {
+		Company("192.168.0.242", 15672),
+		HOST("127.0.0.1", 5672);
+		
+		public String host;
+		public int port;
+		
+		private RabbitMQ(String host, int port) {
+			this.host = host;
+			this.port = port;
+		}
 	}
 }
