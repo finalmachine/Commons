@@ -55,6 +55,7 @@ public class ProxyPool {
 		checkSubject.put("CN", "http://www.shanghai.gov.cn/newshanghai/img/color-logo-hd.png"); // 百度logo
 
 		BasicHttpClient c = new BasicHttpClient();
+		c.setProxy(Params.StableProxy.ZHITAO.host, Params.StableProxy.ZHITAO.port);
 		c.close();
 	}
 
