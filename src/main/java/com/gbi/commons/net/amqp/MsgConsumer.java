@@ -30,7 +30,7 @@ public final class MsgConsumer extends MsgBase implements Runnable, Consumer {
 	public <T extends Serializable> MsgConsumer(String queueName, MsgWorker<T> worker, String host,
 			int port, String username, String password, String virtualHost) throws IOException,
 			TimeoutException {
-		super(queueName, host, port, username, password, virtualHost);
+		super(queueName, null, host, port, username, password, virtualHost);
 		_channel.basicQos(1);
 		_worker = worker;
 	}

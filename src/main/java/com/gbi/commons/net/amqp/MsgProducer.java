@@ -16,7 +16,7 @@ public final class MsgProducer<T extends Serializable> extends MsgBase {
 
 	public MsgProducer(String queueName, String host, int port, String username, String password,
 			String virtualHost) throws IOException, TimeoutException {
-		super(queueName, host, port, username, password, virtualHost);
+		super(queueName, null, host, port, username, password, virtualHost);
 	}
 
 	public void send(T object) {

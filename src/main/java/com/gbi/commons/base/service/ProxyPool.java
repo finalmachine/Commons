@@ -55,7 +55,6 @@ public class ProxyPool {
 		checkSubject.put("CN", "http://www.shanghai.gov.cn/newshanghai/img/color-logo-hd.png"); // 百度logo
 
 		BasicHttpClient c = new BasicHttpClient();
-		c.setProxy(Params.StableProxy.host, Params.StableProxy.port);
 		c.close();
 	}
 

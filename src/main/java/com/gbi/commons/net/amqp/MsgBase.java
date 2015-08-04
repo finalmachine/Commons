@@ -14,22 +14,16 @@ public class MsgBase implements Closeable {
 	protected Connection _connection = null;
 	protected Channel _channel = null;
 	protected String _queueName = null;
-	
+
 	public MsgBase(String queueName) throws IOException, TimeoutException {
-		_connection = new ConnectionFactory().newConnection();
-		_channel = _connection.createChannel();
-		_queueName = queueName;
-		_channel.queueDeclare(queueName, true, false, false, null);
+		this(queueName, null);
 	}
-	
+
 	public MsgBase(String queueName, ExecutorService pool) throws IOException, TimeoutException {
-		_connection = new ConnectionFactory().newConnection(pool);
-		_channel = _connection.createChannel();
-		_queueName = queueName;
-		_channel.queueDeclare(queueName, true, false, false, null);
+		this(queueName, pool, null, 0, null, null, null);
 	}
-	
-	public MsgBase(String queueName, String host, int port, String username, String password,
+
+	public MsgBase(String queueName, ExecutorService pool, String host, int port, String username, String password,
 			String virtualHost) throws IOException, TimeoutException {
 		ConnectionFactory factory = new ConnectionFactory();
 		if (host != null) {
@@ -47,7 +41,11 @@ public class MsgBase implements Closeable {
 		if (virtualHost != null) {
 			factory.setVirtualHost(virtualHost);
 		}
-		_connection = factory.newConnection();
+		if (pool != null) {
+			_connection = new ConnectionFactory().newConnection(pool);
+		} else {
+			_connection = new ConnectionFactory().newConnection();
+		}
 		_channel = _connection.createChannel();
 		_queueName = queueName;
 		_channel.queueDeclare(queueName, true, false, false, null);

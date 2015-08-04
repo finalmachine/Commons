@@ -28,10 +28,10 @@ public class MsgConsumers {
 			_worker = worker;
 		}
 
-		public <T extends Serializable> ConConsumer(String queueName, MsgWorker<T> worker, String host,
+		public <T extends Serializable> ConConsumer(String queueName, ExecutorService pool, MsgWorker<T> worker, String host,
 				int port, String username, String password, String virtualHost) throws IOException,
 				TimeoutException {
-			super(queueName, host, port, username, password, virtualHost);
+			super(queueName, pool, host, port, username, password, virtualHost);
 			_channel.basicQos(1);
 			_worker = worker;
 		}

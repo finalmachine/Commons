@@ -22,7 +22,7 @@ public class MsgNonblockConsumer extends MsgBase implements Runnable {
 	public <T extends Serializable> MsgNonblockConsumer(String queueName, MsgWorker<T> worker, String host,
 			int port, String username, String password, String virtualHost) throws IOException,
 			TimeoutException {
-		super(queueName, host, port, username, password, virtualHost);
+		super(queueName, null, host, port, username, password, virtualHost);
 		_channel.basicQos(1);
 		_worker = worker;
 	}
