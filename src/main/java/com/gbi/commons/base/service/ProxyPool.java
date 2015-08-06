@@ -43,11 +43,9 @@ public class ProxyPool {
 			client = new MongoClient(Params.MongoDB.PROXIES.host, Params.MongoDB.PROXIES.port);
 			collection = client.getDB(Params.MongoDB.PROXIES.database).getCollection("proxies");
 			producer = new MsgProducer<>(queueName);
-		} catch (UnknownHostException e) {
+		} catch (UnknownHostException | TimeoutException e) {
 			throw new RuntimeException(e);
 		} catch (IOException e) {
-			throw new RuntimeException(e);
-		} catch (TimeoutException e) {
 			throw new RuntimeException(e);
 		}
 		checkSubject.put("US", "http://www.google.com");
