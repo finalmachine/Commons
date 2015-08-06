@@ -34,7 +34,6 @@ public class ProxyPool {
 	private static final String queueName = "ProxyPool";
 	private static final Map<String, String> checkSubject = new HashMap<>();
 	// private static final Map<String, String> subjectMd5 = new HashMap<>();
-
 	private static MongoClient client = null;
 	private static DBCollection collection = null;
 	private static MsgProducer<String> producer = null;
