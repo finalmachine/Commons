@@ -1,4 +1,6 @@
-target/
+/target/
 .settings/
+.idea/
 .project
 .classpath
+Commons.iml
